@@ -6,6 +6,7 @@
 @file:nucleotide_helper.py
 @time:1/14/23 11:40 AM
 """
+import re
 
 
 def nucleotide_dis2(input, sampleid):
@@ -47,3 +48,13 @@ def nucleotide_dis2(input, sampleid):
     for X, V in n_dis.items():
         out.write('{0}\t{1}\t{2}\n'.format(X[0], X[1:3], V))
     out.close()
+
+
+def get_nucleotide_abundance(input, output, sequence_length,  nucleotide_order='ATGC', percentageFlag=False):
+    from ..core.fasta import Fasta
+    fasta = Fasta(input)
+    nucleotide_abundance_dict = fasta.getNucleotideAbundance(sequence_length)
+    out = open(output, "w")
+    fasta.writeNucleotideAbundanceTable(nucleotide_abundance_dict, out, nucleotide_order, percentageFlag)
+    out.close()
+

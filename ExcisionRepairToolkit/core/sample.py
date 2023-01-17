@@ -1,13 +1,14 @@
 import os
 from ..utils.cluster_module import check_module
-
+import sys
 
 class Sample(object):
-    def __init__(self, id, fqs, outdir,):
+    def __init__(self, id, fqs, outdir, type):
         self._id = id
         self._fqs = fqs
         self._outdir = outdir
         self._commands = []
+        self._type = type
 
     @property
     def id(self):
@@ -32,15 +33,15 @@ class Sample(object):
         self.process.append(step)
         self.result[step] = output
 
-    def check_gz(self,):
-        fq_list = self._fqs.split(';')
+    def merge_gz(self,sep=";"):
+        fq_list = self._fqs.split(sep)
         output = self._outdir + "/" + self._id + "_merged.fq.gz"
         if len(fq_list) > 1:
             command = "cat %s > %s" %(" ".join(fq_list), output)
             self.run_commands(command)
         return output
 
-    def get_fastqc(self, input, module_load="module load FastQC/0.11.9-Java-11", ):
+    def get_fastqc(self, input, module_load="module load FastQC/0.11.9-Java-11\nmodule list", ):
         ## generate *.zip and *.html
         command= f"fastqc {input}"
         self.run_commands(
@@ -64,9 +65,9 @@ class Sample(object):
 
     def rmdup(
             self,
+            input,
             module_load="module load FASTX-Toolkit/0.0.14-GCCcore-8.3.0",
-            param="-v -Q33",
-            input=None):
+            param="-v -Q33",):
         output = self._outdir + "/" + self._id + "_rmdup.fq.gz"
         command = f"fastx_collapser -i {input} -o {output} {param}\n"
         self.run_commands(
@@ -118,10 +119,10 @@ class Sample(object):
     def slop_bed(
             self,
             input,
+            ref_size,
             module_load="module load  BEDTools",
             param="-b 6 -s"):
         output = self._outdir + "/" + self._id + "_slop.sorted.bed"
-        ref_size="/work/wllab/wentao/afb1/hg38.chrom.sizes"
         command = f"bedtools slop -i {input} -g {ref_size} {param} > {output}"
         self.run_commands(
             command,
@@ -129,10 +130,42 @@ class Sample(object):
             step=type(self).slop_bed.__name__,
             module_load=module_load)
 
-    def fixed_slop(self, input, side="l", length=12,):
+    def fixed_slop(self, input, side="l", length=12, strandFlag=True):
         output = self._outdir + "/" + self._id + f"_slop_{length}.sorted.bed"
+        from ..io.reader import read_bed
+        input_bed = read_bed(input)
+        out = open("tmp.bed", "w")
+        for ll in input_bed:
+        #ll = bedLine.strip().split('\t')
+            beg = ll.start()
+            end = ll.end()
+            strand = ll.strand()
+            if (strandFlag == True and strand == '+') or (strandFlag == False):
+                if side == 'l':
+                    newEnd = min(beg + length, end)
+                    newBeg = beg
+                elif side == 'r':
+                    newBeg = max(end - length, beg)
+                    newEnd = end
+            elif strandFlag == True and strand == '-':
+                if side == 'l':
+                    newBeg = max(end - length, beg)
+                    newEnd = end
+                elif side == 'r':
+                    newEnd = min(beg + length, end)
+                    newBeg = beg
+            if side != 'l' and side != 'r':
+                sys.exit('Error: side must be either l or r. Exiting...')
+            newline = ll.newline(start=str(newBeg), end=str(newEnd))
+            out.write(newline + "\n")
+            # ll[1] = str(newBeg)
+            # ll[2] = str(newEnd)
+            # return '\t'.join(ll)
+        out.close()
         program = "bedline2fixedRangedLine.py"
-        command = f"python {program} {input} {side} {length} tmp.bed\nsort -k1,1 -k2,2n tmp.bed > {output}\n"
+        #command = f"python {program} {input} {side} {length} tmp.bed\n"
+        command = f"sort -k1,1 -k2,2n tmp.bed > {output}"
+
         self.run_commands(
             command,
             output=output,
@@ -154,7 +187,7 @@ class Sample(object):
             step=type(self).getfasta.__name__,
             module_load=module_load)
 
-    def low2uppercase(self, input, param):
+    def low2uppercase(self, input,):
         output = self._outdir + "/" + self._id + f"_uppercase.fa"
         command = f"cat {input} |tr 'a-z' 'A-Z' > {output}\n"
         self.run_commands(
@@ -181,18 +214,23 @@ class Sample(object):
             input,
             module_load="module load Python/3.8.2-GCCcore-8.3.0",
             param="-n GACT --percentage"):
+        from ..utils.nucleotide_helper import get_nucleotide_abundance
         program = "/work/wllab/yiran/01.scripts/Damage_seq/fastatonucleotideAbundanceTable.py"
         output = self._outdir + "/" + self._id + f"_getNuAbTa.csv"
-        command = f"python {program} -i {input} -o {output} {param}\n"
+        #command = f"python {program} -i {input} -o {output} {param}\n"
+        get_nucleotide_abundance(input=input, output=output,)
+        '''
         self.run_commands(
             command,
             output=output,
             step=type(self).nucleotide_abundance.__name__,
             module_load=None)
+        '''
 
     def plot_nucleotide_abundance(self,module_load="module load R"):
         command = "Rscript {program} {input} toplot\n"
         command = check_module(module_load, command)
+        output = self._outdir + "/" + self._id + f"_getNuAbTa.pdf"
         self.run_commands(
             command,
             output=output,

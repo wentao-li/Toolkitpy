@@ -11,6 +11,7 @@
 from ExcisionRepairToolkit.core.bed import Bed
 from ExcisionRepairToolkit.core.pipeline import Pipeline
 
+
 def run(sample_bed, gene_list, sampleid):
     dam= Pipeline()
     sample = Bed(sample_bed)

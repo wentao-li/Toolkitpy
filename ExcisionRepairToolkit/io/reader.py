@@ -18,4 +18,13 @@ def read_bed(file_path,):
     for line in filein:
         yield (Bedline(line))
 
-    #df = pd.read_csv(file_path, sep="\t", header=None)
+
+def read_samplelist(sample_list):
+    from ExcisionRepairToolkit.core.sample import Sample
+    f = open(sample_list, "r")
+    for line in f.readlines():
+        ll = line.strip().split("\t")
+        id = ll[0]
+        fqs = ll[1]
+        sample = Sample(id=id, fqs=fqs)
+        return sample
