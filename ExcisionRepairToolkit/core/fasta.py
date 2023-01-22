@@ -12,7 +12,7 @@ import re
 import sys
 import itertools
 import random
-from sequence import Sequence
+from .sequence import Sequence
 
 
 def nucleotideAbundanceDict2percentageDict(theDict):

@@ -9,7 +9,6 @@
 
 from ExcisionRepairToolkit.core.bed import Bed
 from ExcisionRepairToolkit.core.bedline import Bedline
-import pandas as pd
 
 
 def read_bed(file_path,):
@@ -18,13 +17,4 @@ def read_bed(file_path,):
     for line in filein:
         yield (Bedline(line))
 
-
-def read_samplelist(sample_list):
-    from ExcisionRepairToolkit.core.sample import Sample
-    f = open(sample_list, "r")
-    for line in f.readlines():
-        ll = line.strip().split("\t")
-        id = ll[0]
-        fqs = ll[1]
-        sample = Sample(id=id, fqs=fqs)
-        return sample
+    #df = pd.read_csv(file_path, sep="\t", header=None)

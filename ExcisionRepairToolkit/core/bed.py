@@ -8,7 +8,6 @@
 """
 
 import sys
-import pandas as pd
 import os
 import sys
 import unittest

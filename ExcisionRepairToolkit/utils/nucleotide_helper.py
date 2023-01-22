@@ -9,10 +9,9 @@
 import re
 
 
-def nucleotide_dis2(input, sampleid):
+def nucleotide_dis2(input, sampleid, output):
     f = open(input, 'r')
     n_dis = {}
-    output = f"{sampleid}_nt_dis.txt"
     for LINES in f:
         if LINES[0] != ">" and len(LINES) == 13:
             for i in range(0, len(LINES)):
@@ -50,11 +49,11 @@ def nucleotide_dis2(input, sampleid):
     out.close()
 
 
-def get_nucleotide_abundance(input, output, sequence_length,  nucleotide_order='ATGC', percentageFlag=False):
+def get_nucleotide_abundance(input, output, sequence_length=None,  nucleotide_order='ATGC', percentageFlag=True):
     from ..core.fasta import Fasta
     fasta = Fasta(input)
     nucleotide_abundance_dict = fasta.getNucleotideAbundance(sequence_length)
-    out = open(output, "w")
-    fasta.writeNucleotideAbundanceTable(nucleotide_abundance_dict, out, nucleotide_order, percentageFlag)
-    out.close()
+#    out = open(output, "w")
+    fasta.writeNucleotideAbundanceTable(nucleotide_abundance_dict, output, nucleotide_order, percentageFlag)
+#    out.close()
 

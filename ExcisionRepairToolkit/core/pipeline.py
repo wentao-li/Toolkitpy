@@ -8,8 +8,6 @@
 """
 import os
 
-import pandas as pd
-import numpy as np
 from ExcisionRepairToolkit.core.bedline import Bedline
 from ExcisionRepairToolkit.core.bed import Bed
 
@@ -21,14 +19,8 @@ class XRseqPipeline(object):
         self.result = dict()
         self.process = []
 
-
-    @property
-    def commands(self):
-        return self.commands
-
     def run_commands(self, command, output, step):
         os.system(command)
-        self.commands.append(command)
         self.process.append(step)
         self.result[step] = output
 
@@ -72,7 +64,7 @@ class XRseqPipeline(object):
             read_count = int(f.readline().strip())
             nf = 10 ** 9 / read_count
         for intersect in [ts_bed, nts_bed]:
-            output = sampleid + "_rpkm_" + intersect
+            output = sampleid + "rpkm_" + intersect
             out = open(output, "w")
             with open(intersect) as f:
                 for line in f:

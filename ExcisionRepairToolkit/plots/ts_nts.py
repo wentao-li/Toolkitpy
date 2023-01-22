@@ -8,8 +8,6 @@
 """
 
 import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
 import copy
 
 '''
@@ -37,7 +35,7 @@ def plot_ts_nts(ts_file,nts_file, output):
 
 
     #plt.legend(loc='upper right', frameon=False)
-
+    plt.ylabel('RPKM', fontsize=12)
     plt.xlabel('Bin', fontsize=12)
     plt.title('Effect of Transcription on AFB1')
 
