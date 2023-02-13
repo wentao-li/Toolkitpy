@@ -10,6 +10,7 @@ import os
 
 from ExcisionRepairToolkit.core.bedline import Bedline
 from ExcisionRepairToolkit.core.bed import Bed
+from ..utils.cluster_module import check_module
 
 class XRseqPipeline(object):
     def __init__(self, sample_bed, gene_list, sampleid):
@@ -18,11 +19,15 @@ class XRseqPipeline(object):
         self.gene_list = Bed(gene_list)
         self.result = dict()
         self.process = []
+        self.commands = []
 
-    def run_commands(self, command, output, step):
+    def run_commands(self, command, output, step, module_load, ):
+        command = check_module(module_load, command)
         os.system(command)
+        self.commands.append(command)
         self.process.append(step)
-        self.result[step] = output
+        print(step)
+        #self.result[step] = output
 
     def cut_bylength(self, bed_file, sampleid):
         from ..io.reader import read_bed
@@ -87,7 +92,7 @@ class XRseqPipeline(object):
         return output
 
     @staticmethod
-    def get_rpgcm(fasta, read_count_file, intersect_count_file, sampleid):
+    def get_rpkgcm(fasta, read_count_file, intersect_count_file, sampleid,):
         # read count file
         with open(read_count_file) as f:
             read_count = int(f.readline().strip())
@@ -122,7 +127,7 @@ class XRseqPipeline(object):
 
 
     @staticmethod
-    def get_rpkm_mean(bed_file, output):
+    def get_rpkm_mean(bed_file, output, factor="rpkm"):
         '''
         :param bed_file: "chr1	35313	35553	WASH7P	1	-	0.0"
         :return:
@@ -132,6 +137,17 @@ class XRseqPipeline(object):
         import pandas as pd
         #output = sampleid + "_mean.txt"
         rp = pd.read_csv(bed_file, sep="\t", header=None)
-        rp.columns = ['chr', 'start', 'end', 'gene', 'bin', "strand", 'rpkm']
-        rp.groupby(by='bin')['rpkm'].agg([np.mean]).to_csv(output,sep=" ", header=None)
+        rp.columns = ['chr', 'start', 'end', 'gene', 'bin', "strand", factor]
+        rp.groupby(by='bin')[factor].agg([np.mean]).to_csv(output,sep=" ", header=None)
+        return output
+
+    def get_fasta_frombed(self, fasta, bed, module_load="module load ml BEDTools/2.30.0-GCC-10.2.0", output=None):
+        if output is None:
+            output = f"{bed}.getfasta.fa"
+        command = f"bedtools getfasta -fi {fasta} -bed {bed} -fo {bed}.fa"
+        self.run_commands(
+            command=command,
+            output=output,
+            step=type(self).get_fasta_frombed.__name__,
+            module_load=module_load)
         return output
